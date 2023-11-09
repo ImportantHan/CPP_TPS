@@ -34,10 +34,21 @@ public:
 
 	UPROPERTY(EditAnywhere);
 	class UCameraComponent* CameraComp;
-	
+
+	// 유탄총
+	UPROPERTY(EditAnywhere);
+	class USkeletalMeshComponent* GrenadeGun;
+
+	// 스나이퍼
+	UPROPERTY(EditAnywhere);
+	class UStaticMeshComponent* SniperGun;
+
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = TPS);
 	FVector Direction;
+
+	UPROPERTY(EditAnywhere);
+	TSubclassOf<class ABullet> BulletFactory;
 
 	// 입력에 대응하는 함수 제작
 	void AxisHorizontal(float value);
@@ -46,4 +57,7 @@ public:
 	void AxisTurn(float value);
 	void ActionJump();
 	void ActionFire();
+private:
+	void ActionChooseGrenadeGun();
+	void ActionChooseSniperGun();
 };

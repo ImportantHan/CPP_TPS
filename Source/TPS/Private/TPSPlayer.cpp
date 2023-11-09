@@ -2,9 +2,13 @@
 
 
 #include "TPSPlayer.h"
+#include "Bullet.h"
+
 #include "GameFramework/SpringArmComponent.h"
 #include "Camera/CameraComponent.h"
+
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Engine/SkeletalMesh.h"
 
 // 생성자
 ATPSPlayer::ATPSPlayer()
@@ -37,11 +41,32 @@ ATPSPlayer::ATPSPlayer()
 	// 폰 중심 카메라 이동 체크박스
 	SpringArmComp->bUsePawnControlRotation = true;
 	// 이동한는 방향 바라보는 체크박스
-	GetCharacterMovement()->bOrientRotationToMovement = false; 
+	GetCharacterMovement()->bOrientRotationToMovement = false;
 
 	// 캐릭터 컴포넌트에 있는 설정 변경
 	JumpMaxCount = 2;
 	GetCharacterMovement()->AirControl = 0.7; // 공중 움직임
+
+	// 유탄총 생성하고 에셋 적용 후 배치
+	GrenadeGun = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("GrenadeGun")); // 컴포넌트 등록
+	GrenadeGun->SetupAttachment(GetMesh()); // Mesh 에 Attach
+	GrenadeGun->SetCollisionEnabled(ECollisionEnabled::NoCollision); // 충돌처리 제외
+	ConstructorHelpers::FObjectFinder<USkeletalMesh> TempGrenadeGunMesh(TEXT("/Script/Engine.SkeletalMesh'/Game/Models/FPWeapon/Mesh/SK_FPGun.SK_FPGun'")); // 데이터로드
+	if (TempGrenadeGunMesh.Succeeded()) { // 로드 성공시
+		GrenadeGun->SetSkeletalMesh(TempGrenadeGunMesh.Object); // skeletal mesh 데이터 할당
+		GrenadeGun->SetRelativeLocation(FVector(0, 40, 120)); // 위치 조정
+	}
+
+	// 스나이퍼 생성하고 Mesh 에 붙이기
+	SniperGun = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("SniperGun"));
+	SniperGun->SetupAttachment(GetMesh());
+	SniperGun->SetCollisionEnabled((ECollisionEnabled::NoCollision));
+	ConstructorHelpers::FObjectFinder<UStaticMesh> TempSniperGunMesh(TEXT("/Script/Engine.StaticMesh'/Game/Models/SniperGun/sniper1.sniper1'"));
+	if (TempSniperGunMesh.Succeeded()) {
+		SniperGun->SetStaticMesh(TempSniperGunMesh.Object);
+		SniperGun->SetRelativeLocation(FVector(0, 80, 130));
+		SniperGun->SetRelativeScale3D(FVector(0.15f));
+	}
 }
 
 // Called when the game starts or when spawned
@@ -49,6 +74,8 @@ void ATPSPlayer::BeginPlay()
 {
 	Super::BeginPlay();
 	
+	// 처음 시작할 때 Grenade만 보이도록 처리
+	ATPSPlayer::ActionChooseGrenadeGun();
 }
 
 // Called every frame
@@ -78,6 +105,9 @@ void ATPSPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent
 
 	PlayerInputComponent->BindAction(TEXT("Jump"), IE_Pressed, this, &ATPSPlayer::ActionJump);
 	PlayerInputComponent->BindAction(TEXT("Fire"), IE_Pressed, this, &ATPSPlayer::ActionFire);
+
+	PlayerInputComponent->BindAction(TEXT("ChooseGrenadeGun"), IE_Pressed, this, &ATPSPlayer::ActionChooseGrenadeGun);
+	PlayerInputComponent->BindAction(TEXT("ChooseSniperGun"), IE_Pressed, this, &ATPSPlayer::ActionChooseSniperGun);
 }
 
 void ATPSPlayer::AxisVertical(float value)
@@ -107,5 +137,23 @@ void ATPSPlayer::ActionJump()
 
 void ATPSPlayer::ActionFire()
 {
+	// 총알을 생성해서 유탄총의 총구 소켓 위치에 배치
+	FTransform FirePosition = GrenadeGun->GetSocketTransform(TEXT("FirePosition"));
+	GetWorld()->SpawnActor<ABullet>(BulletFactory, FirePosition);
+}
+
+
+// input 에서 1번 키 매핑 - GrenadeGun출현
+void ATPSPlayer::ActionChooseGrenadeGun()
+{
+	GrenadeGun->SetVisibility(true);
+	SniperGun->SetVisibility(false);
+}
+
+// input 에서 2번 키 매핑 - SniperGun출현
+void ATPSPlayer::ActionChooseSniperGun()
+{
+	GrenadeGun->SetVisibility(false);
+	SniperGun->SetVisibility(true);
 }
 

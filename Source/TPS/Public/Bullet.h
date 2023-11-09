@@ -23,4 +23,14 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
+	// 충돌체, 외관, 발사체이동// BP로 꺼내 쓸거면 무조건 UPROPERTY
+public:
+	UPROPERTY(EditAnywhere) 
+	class USphereComponent* CollisionComp;
+
+	UPROPERTY(EditAnywhere)
+	class UStaticMeshComponent* MeshComp;
+
+	UPROPERTY(EditAnywhere)
+	class UProjectileMovementComponent* MovementComp;
 };
