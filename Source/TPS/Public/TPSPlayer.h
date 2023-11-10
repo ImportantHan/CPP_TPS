@@ -56,8 +56,37 @@ public:
 	void AxisLookUp(float value);
 	void AxisTurn(float value);
 	void ActionJump();
+
+	// 총쏘기 나눠서 
 	void ActionFire();
-private:
+	void GrenadeFire();
+	void SniperFire();
+
 	void ActionChooseGrenadeGun();
 	void ActionChooseSniperGun();
+
+	void ActionZoomIn();
+	void ActionZoomOut();
+
+	
+	// 조준 UI 설정 - 크로스헤어, 스나이퍼 위젯 공장
+	UPROPERTY(EditAnywhere);
+	TSubclassOf<class UUserWidget> CrossHairUIFactory;
+	
+	UPROPERTY();
+	class UUserWidget* CrossHairUI;
+
+	UPROPERTY(EditAnywhere);
+	TSubclassOf<class UUserWidget> SniperUIFactory;
+
+	UPROPERTY();
+	class UUserWidget* SniperUI;
+
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = TPS);
+	bool bChooseGrenadeGun;
+
+	// VFXFactory 추가
+	UPROPERTY(EditAnywhere)
+	class UParticleSystem* ExplosionVFXFactory;
 };

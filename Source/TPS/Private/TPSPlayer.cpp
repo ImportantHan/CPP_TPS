@@ -1,5 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 
 #include "TPSPlayer.h"
 #include "Bullet.h"
@@ -9,6 +7,9 @@
 
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Engine/SkeletalMesh.h"
+#include "Blueprint/UserWidget.h"
+
+#include "Kismet/GameplayStatics.h"
 
 // 생성자
 ATPSPlayer::ATPSPlayer()
@@ -69,16 +70,26 @@ ATPSPlayer::ATPSPlayer()
 	}
 }
 
-// Called when the game starts or when spawned
+// 비긴 플레이
 void ATPSPlayer::BeginPlay()
 {
 	Super::BeginPlay();
+
+	// 태어날 때 두 개의 위젯 생성
+	CrossHairUI = CreateWidget(GetWorld(), CrossHairUIFactory);
+	SniperUI = CreateWidget(GetWorld(), SniperUIFactory);
+	// 다 넣어놓고 보였다 안보였다 하는 방식으로 구현
+	CrossHairUI->AddToViewport(0);
+	SniperUI->AddToViewport(0);
 	
-	// 처음 시작할 때 Grenade만 보이도록 처리
+	// 부모에서 떼어내기
+	// CrossHairUI->RemoveFromParent();
+
+	// 처음 시작할 때 Grenade 만 보이도록 처리
 	ATPSPlayer::ActionChooseGrenadeGun();
 }
 
-// Called every frame
+// 틱
 void ATPSPlayer::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
@@ -91,69 +102,132 @@ void ATPSPlayer::Tick(float DeltaTime)
 	AddMovementInput(dir);
 }
 
-// Called to bind functionality to input
+// 입력값
 void ATPSPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
 	// 입력 함수들 모두 연결 (Project Setting 에 있는 이름과 연결)
+	// 캐릭터 이동
 	PlayerInputComponent->BindAxis(TEXT("Move Forward / Backward"), this, &ATPSPlayer::AxisVertical);
 	PlayerInputComponent->BindAxis(TEXT("Move Right / Left"), this, &ATPSPlayer::AxisHorizontal);
-
+	// 시야 이동
 	PlayerInputComponent->BindAxis(TEXT("Look Up / Down Mouse"), this, &ATPSPlayer::AxisLookUp);
 	PlayerInputComponent->BindAxis(TEXT("Turn Right / Left Mouse"), this, &ATPSPlayer::AxisTurn);
-
+	// 점프, 총쏘기
 	PlayerInputComponent->BindAction(TEXT("Jump"), IE_Pressed, this, &ATPSPlayer::ActionJump);
 	PlayerInputComponent->BindAction(TEXT("Fire"), IE_Pressed, this, &ATPSPlayer::ActionFire);
-
+	// 유탄, 스나이퍼
 	PlayerInputComponent->BindAction(TEXT("ChooseGrenadeGun"), IE_Pressed, this, &ATPSPlayer::ActionChooseGrenadeGun);
 	PlayerInputComponent->BindAction(TEXT("ChooseSniperGun"), IE_Pressed, this, &ATPSPlayer::ActionChooseSniperGun);
-}
+	// 줌 인아웃
+	PlayerInputComponent->BindAction(TEXT("Zoom"), IE_Pressed, this, &ATPSPlayer::ActionZoomIn);
+	PlayerInputComponent->BindAction(TEXT("Zoom"), IE_Released, this, &ATPSPlayer::ActionZoomOut);
 
+}
+// 수직(앞뒤) 이동
 void ATPSPlayer::AxisVertical(float value)
 {
 	Direction.X = value;
 }
-
+// 수평(좌우) 이동
 void ATPSPlayer::AxisHorizontal(float value)
 {
 	Direction.Y = value;
 }
-
+// 상하 회전
 void ATPSPlayer::AxisLookUp(float value)
 {
 	AddControllerPitchInput(value);
 }
-
+// 좌우 회전
 void ATPSPlayer::AxisTurn(float value)
 {
 	AddControllerYawInput(value);
 }
-
+// 점프
 void ATPSPlayer::ActionJump()
 {
 	Jump();
 }
-
+// 유탄인지 체크해서 각각 상황에 맞는 총 발사 함수 호출
 void ATPSPlayer::ActionFire()
+{
+	if (bChooseGrenadeGun) {
+		GrenadeFire();
+	}
+	else {
+		SniperFire();
+	}
+}
+
+// 유탄 발사
+void ATPSPlayer::GrenadeFire()
 {
 	// 총알을 생성해서 유탄총의 총구 소켓 위치에 배치
 	FTransform FirePosition = GrenadeGun->GetSocketTransform(TEXT("FirePosition"));
 	GetWorld()->SpawnActor<ABullet>(BulletFactory, FirePosition);
 }
-
-
-// input 에서 1번 키 매핑 - GrenadeGun출현
-void ATPSPlayer::ActionChooseGrenadeGun()
+// 스나이퍼 발사
+void ATPSPlayer::SniperFire()
 {
-	GrenadeGun->SetVisibility(true);
-	SniperGun->SetVisibility(false);
+	// 앞방향 1Km 바라보기
+	FHitResult HitResult;
+	FVector Start = CameraComp->GetComponentLocation();
+	FVector End = Start + CameraComp->GetForwardVector() * 100000.f;
+	FCollisionQueryParams Params;
+	// 라인트레이스 : 바라보는 시선
+	if (GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, ECollisionChannel::ECC_Visibility)) {
+		// 어딘가에 부딪히면 폭발 이펙트 표현
+		FTransform position = FTransform(HitResult.ImpactPoint);
+		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ExplosionVFXFactory, position);
+	} else {
+		// 부딪힌 곳이 없다(허공)
+	}
 }
 
-// input 에서 2번 키 매핑 - SniperGun출현
+// input 에서 1번 키 매핑 - 유탄총
+void ATPSPlayer::ActionChooseGrenadeGun()
+{
+	bChooseGrenadeGun = true;
+
+	GrenadeGun->SetVisibility(true);
+	SniperGun->SetVisibility(false);
+	CrossHairUI->SetVisibility(ESlateVisibility::Hidden);
+	SniperUI->SetVisibility(ESlateVisibility::Hidden);
+
+}
+
+// input 에서 2번 키 매핑 - 스나이퍼 총
 void ATPSPlayer::ActionChooseSniperGun()
 {
+	bChooseGrenadeGun = false;
+
 	GrenadeGun->SetVisibility(false);
 	SniperGun->SetVisibility(true);
+	CrossHairUI->SetVisibility(ESlateVisibility::Visible);
+	SniperUI->SetVisibility(ESlateVisibility::Hidden);
+}
+
+// 줌 In & Out (카메라 거리 조절)
+// 줌 In 일 경우 Sniper 조준 보이게
+// 줌 Out 일 경우 CrossHair 조준 보이게
+void ATPSPlayer::ActionZoomIn()
+{
+	if (bChooseGrenadeGun) {
+		return;
+	}
+	CameraComp->FieldOfView = 45;
+	CrossHairUI->SetVisibility(ESlateVisibility::Hidden);
+	SniperUI->SetVisibility(ESlateVisibility::Visible);
+}
+void ATPSPlayer::ActionZoomOut()
+{
+	if (bChooseGrenadeGun) {
+		return;
+	}
+	CameraComp->FieldOfView = 90;
+	CrossHairUI->SetVisibility(ESlateVisibility::Visible);
+	SniperUI->SetVisibility(ESlateVisibility::Hidden);
 }
 

@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+ï»¿// Fill out your copyright notice in the Description page of Project Settings.
 
 
 #include "Bullet.h"
@@ -12,26 +12,26 @@ ABullet::ABullet()
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
-	// Ãæµ¹Ã¼¸¦ ·çÆ®·Î
-	CollisionComp = CreateDefaultSubobject<USphereComponent>(TEXT("CollisionComp")); // Ãæµ¹Ã¼ µî·Ï
-	SetRootComponent(CollisionComp); // ·çÆ®·Î µî·Ï
-	CollisionComp->SetSphereRadius(12.5f); // Ãæµ¹Ã¼ Å©±â ¼³Á¤
-	CollisionComp->SetCollisionProfileName(TEXT("BlockAll")); // Ãæµ¹ ÇÁ·ÎÆÄÀÏ ¼³Á¤
+	// ì¶©ëŒì²´ë¥¼ ë£¨íŠ¸ë¡œ
+	CollisionComp = CreateDefaultSubobject<USphereComponent>(TEXT("CollisionComp")); // ì¶©ëŒì²´ ë“±ë¡
+	SetRootComponent(CollisionComp); // ë£¨íŠ¸ë¡œ ë“±ë¡
+	CollisionComp->SetSphereRadius(12.5f); // ì¶©ëŒì²´ í¬ê¸° ì„¤ì •
+	CollisionComp->SetCollisionProfileName(TEXT("BlockAll")); // ì¶©ëŒ í”„ë¡œíŒŒì¼ ì„¤ì •
 
-	// ¿Ü°üÀ» Ãæµ¹Ã¼¿¡ ºÙÀÌ°í
-	MeshComp = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MeshComp")); // ¿Ü°ü ÄÄÆ÷³ÍÆ® µî·Ï
-	MeshComp->SetupAttachment(CollisionComp); // ºÎ¸ğ ÄÄÆ÷³ÍÆ® ÁöÁ¤
-	MeshComp->SetRelativeScale3D(FVector(0.25f)); // ¿Ü°ü Å©±â ¼³Á¤
-	MeshComp->SetCollisionEnabled(ECollisionEnabled::NoCollision); // Ãæµ¹ ºñÈ°¼ºÈ­
+	// ì™¸ê´€ì„ ì¶©ëŒì²´ì— ë¶™ì´ê³ 
+	MeshComp = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MeshComp")); // ì™¸ê´€ ì»´í¬ë„ŒíŠ¸ ë“±ë¡
+	MeshComp->SetupAttachment(CollisionComp); // ë¶€ëª¨ ì»´í¬ë„ŒíŠ¸ ì§€ì •
+	MeshComp->SetRelativeScale3D(FVector(0.25f)); // ì™¸ê´€ í¬ê¸° ì„¤ì •
+	MeshComp->SetCollisionEnabled(ECollisionEnabled::NoCollision); // ì¶©ëŒ ë¹„í™œì„±í™”
 
-	// ÀÌµ¿ÄÄÆ÷³ÍÆ® ¸¸µé°í ¼Ó·Â, Æ¨±è ¼³Á¤
-	MovementComp = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("MovementComp")); // ¹ß»çÃ¼ ÄÄÆ÷³ÍÆ®
-	MovementComp->InitialSpeed = 3000; // ÃÊ±â¼Óµµ
-	MovementComp->MaxSpeed = 3000; // ÃÖ´ë¼Óµµ
-	MovementComp->bShouldBounce = true; // ¹İµ¿¿©ºÎ(b : boolean)
-	MovementComp->Bounciness = 0.3f; // ¹İµ¿ °ª
+	// ì´ë™ì»´í¬ë„ŒíŠ¸ ë§Œë“¤ê³  ì†ë ¥, íŠ•ê¹€ ì„¤ì •
+	MovementComp = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("MovementComp")); // ë°œì‚¬ì²´ ì»´í¬ë„ŒíŠ¸
+	MovementComp->InitialSpeed = 3000; // ì´ˆê¸°ì†ë„
+	MovementComp->MaxSpeed = 3000; // ìµœëŒ€ì†ë„
+	MovementComp->bShouldBounce = true; // ë°˜ë™ì—¬ë¶€(b : boolean)
+	MovementComp->Bounciness = 0.3f; // ë°˜ë™ ê°’
 
-	// µû¶ó´Ù´Ò component ¼³Á¤
+	// ë”°ë¼ë‹¤ë‹ component ì„¤ì •
 	MovementComp->SetUpdatedComponent(CollisionComp);
 }
 
@@ -39,7 +39,26 @@ ABullet::ABullet()
 void ABullet::BeginPlay()
 {
 	Super::BeginPlay();
+
+	FTimerHandle handle;
 	
+	// GetWorld()->GetTimerManager().SetTimer(handle, this, &ABullet::DestroyBullet, 1);
+	GetWorld()->GetTimerManager().SetTimer(handle, 
+		FTimerDelegate::CreateLambda(
+			[this]()->void {
+				// TO DO ë‚´ìš© ì‘ì„±, ëŒë‹¤ë¥¼ ì‚¬ìš©í•´ì„œ ë§¤ë²ˆ í•¨ìˆ˜ë¥¼ ë§Œë“¤ì–´ì¤˜ì•¼í•˜ëŠ” ê·€ì°®ìŒ í•´ê²°
+				this->Destroy();
+				if (GEngine)
+					GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("ì´ì•Œ ì‚¬ë¼ì§"));
+			}),
+		1, false);
+
+	int Sum = 0;
+	// * ì°¸ê³  - ëŒë‹¤ì‹ ì‘ì„± ë°©ë²• *
+	// [ìº¡ì²˜](ë§¤ê°œë³€ìˆ˜)->ë°˜í™˜ìë£Œí˜•{ìŠ¤ì½”í”„, êµ¬í˜„}
+	// []ì•ˆì—ëŠ” ìŠ¤ì½”í”„ì— ë„˜ê²¨ì¤„ ê°’ ì‘ì„±(ì£¼ì†Œê°’, call by value ê°€ ë˜ì§€ ì•Šê²Œ)
+	// auto LambdaAddFunc = [&Sum](int32 a, int32 b) -> void { Sum = a + b; };
+	// LambdaAddFunc(10, 20);
 }
 
 // Called every frame
@@ -49,3 +68,7 @@ void ABullet::Tick(float DeltaTime)
 
 }
 
+// íƒ€ì´ë¨¸ì— ì‚¬ìš©ë˜ëŠ” í•¨ìˆ˜
+//void ABullet::DestroyBullet() {
+//	Destroy();
+//}

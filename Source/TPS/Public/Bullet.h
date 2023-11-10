@@ -33,4 +33,7 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	class UProjectileMovementComponent* MovementComp;
+	
+	// 타이머에서 사용할 총알 제거 함수 선언
+	// void DestroyBullet();
 };
