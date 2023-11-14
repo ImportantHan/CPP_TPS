@@ -42,6 +42,7 @@ void ABullet::BeginPlay()
 
 	FTimerHandle handle;
 	
+	// 타이머 - 함수 사용 or 람다
 	// GetWorld()->GetTimerManager().SetTimer(handle, this, &ABullet::DestroyBullet, 1);
 	GetWorld()->GetTimerManager().SetTimer(handle, 
 		FTimerDelegate::CreateLambda(

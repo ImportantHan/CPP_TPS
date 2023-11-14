@@ -1,6 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
-#pragma once
+ï»¿#pragma once
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
@@ -12,34 +10,30 @@ class TPS_API ATPSPlayer : public ACharacter
 	GENERATED_BODY()
 
 public:
-	// Sets default values for this character's properties
 	ATPSPlayer();
 
 protected:
-	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
 public:	
-	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 public:
-	// Àü¹æ¼±¾ğ - Çì´õÃß°¡¸¦ ÇÏÁö ¾Ê±â À§ÇØ, ÄÄÆÄÀÏ ½Ã°£ ´ÜÃà(Include What You Use)
-	// ÄÄÆ÷³ÍÆ® ½ºÇÁ¸µ¾Ï, Ä«¸Ş¶ó
+	// ì „ë°©ì„ ì–¸ - í—¤ë”ì¶”ê°€ë¥¼ í•˜ì§€ ì•Šê¸° ìœ„í•´, ì»´íŒŒì¼ ì‹œê°„ ë‹¨ì¶•(Include What You Use)
+	// ì»´í¬ë„ŒíŠ¸ ìŠ¤í”„ë§ì•”, ì¹´ë©”ë¼
 	UPROPERTY(EditAnywhere);
 	class USpringArmComponent* SpringArmComp;
 
 	UPROPERTY(EditAnywhere);
 	class UCameraComponent* CameraComp;
 
-	// À¯ÅºÃÑ
+	// ìœ íƒ„ì´
 	UPROPERTY(EditAnywhere);
 	class USkeletalMeshComponent* GrenadeGun;
 
-	// ½º³ªÀÌÆÛ
+	// ìŠ¤ë‚˜ì´í¼
 	UPROPERTY(EditAnywhere);
 	class UStaticMeshComponent* SniperGun;
 
@@ -50,14 +44,14 @@ public:
 	UPROPERTY(EditAnywhere);
 	TSubclassOf<class ABullet> BulletFactory;
 
-	// ÀÔ·Â¿¡ ´ëÀÀÇÏ´Â ÇÔ¼ö Á¦ÀÛ
+	// ì…ë ¥ì— ëŒ€ì‘í•˜ëŠ” í•¨ìˆ˜ ì œì‘
 	void AxisHorizontal(float value);
 	void AxisVertical(float value);
 	void AxisLookUp(float value);
 	void AxisTurn(float value);
 	void ActionJump();
 
-	// ÃÑ½î±â ³ª´²¼­ 
+	// ì´ì˜ê¸° ë‚˜ëˆ ì„œ 
 	void ActionFire();
 	void GrenadeFire();
 	void SniperFire();
@@ -69,24 +63,24 @@ public:
 	void ActionZoomOut();
 
 	
-	// Á¶ÁØ UI ¼³Á¤ - Å©·Î½ºÇì¾î, ½º³ªÀÌÆÛ À§Á¬ °øÀå
-	UPROPERTY(EditAnywhere);
+	// ì¡°ì¤€ UI ì„¤ì • - í¬ë¡œìŠ¤í—¤ì–´, ìŠ¤ë‚˜ì´í¼ ìœ„ì ¯ ê³µì¥
+	UPROPERTY(EditAnywhere)
 	TSubclassOf<class UUserWidget> CrossHairUIFactory;
 	
 	UPROPERTY();
 	class UUserWidget* CrossHairUI;
 
-	UPROPERTY(EditAnywhere);
+	UPROPERTY(EditAnywhere)
 	TSubclassOf<class UUserWidget> SniperUIFactory;
 
 	UPROPERTY();
 	class UUserWidget* SniperUI;
 
 public:
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = TPS);
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = TPS)
 	bool bChooseGrenadeGun;
 
-	// VFXFactory Ãß°¡
+	// VFXFactory ì¶”ê°€
 	UPROPERTY(EditAnywhere)
 	class UParticleSystem* ExplosionVFXFactory;
 };

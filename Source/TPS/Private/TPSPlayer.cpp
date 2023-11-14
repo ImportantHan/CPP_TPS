@@ -1,64 +1,65 @@
-
-#include "TPSPlayer.h"
+ï»¿#include "TPSPlayer.h"
 #include "Bullet.h"
 
 #include "GameFramework/SpringArmComponent.h"
 #include "Camera/CameraComponent.h"
+#include "Engine/SkeletalMesh.h"
 
 #include "GameFramework/CharacterMovementComponent.h"
-#include "Engine/SkeletalMesh.h"
 #include "Blueprint/UserWidget.h"
 
 #include "Kismet/GameplayStatics.h"
+#include "Enemy.h"
+#include "EnemyFSM.h"
 
-// »ı¼ºÀÚ
+// ìƒì„±ì
 ATPSPlayer::ATPSPlayer()
 {
 	PrimaryActorTick.bCanEverTick = true;
 
-	// ½ºÇÁ¸µ¾ÏÀ» »ı¼ºÇØ¼­ ·çÆ®¿¡ ºÙÀÌ°í
+	// ìŠ¤í”„ë§ì•”ì„ ìƒì„±í•´ì„œ ë£¨íŠ¸ì— ë¶™ì´ê³ 
 	SpringArmComp = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArmComp"));
 	SpringArmComp->SetupAttachment(RootComponent);
-	// À§Ä¡ X = 0, Y = 50, Z = 80À¸·Î ±¸Çö
+	// ìœ„ì¹˜ X = 0, Y = 50, Z = 80ìœ¼ë¡œ êµ¬í˜„
 	SpringArmComp->SetRelativeLocation(FVector(0, 50, 80));
-	// ½ºÇÁ¸µ¾ÏÀÇ TargetArmlength°ªÀ» 300À¸·Î
+	// ìŠ¤í”„ë§ì•”ì˜ TargetArmlengthê°’ì„ 300ìœ¼ë¡œ
 	SpringArmComp->TargetArmLength = 300;
 
-	// Ä«¸Ş¶ó¸¦ »ı¼ºÇØ¼­ ½ºÇÁ¸µ¾Ï¿¡ ºÙÀÓ
+	// ì¹´ë©”ë¼ë¥¼ ìƒì„±í•´ì„œ ìŠ¤í”„ë§ì•”ì— ë¶™ì„
 	CameraComp = CreateDefaultSubobject<UCameraComponent>(TEXT("CameraComp"));
 	CameraComp->SetupAttachment(SpringArmComp);
 
-	// Skeletal Mesh Àû¿ë
-	// »ı¼ºÀÚ µµ¿ì¹Ì¸¦ ÀÌ¿äÇØ¼­ Skeletal Mesh ·Îµå(¸Ş½Ã ÁÖ¼Ò Ä«ÇÇ)
+	// Skeletal Mesh ì ìš©
+	// ìƒì„±ì ë„ìš°ë¯¸ë¥¼ ì´ìš©í•´ì„œ Skeletal Mesh ë¡œë“œ(ë©”ì‹œ ì£¼ì†Œ ì¹´í”¼)
 	ConstructorHelpers::FObjectFinder<USkeletalMesh> TempMesh(TEXT("/Script/Engine.SkeletalMesh'/Game/Characters/Mannequins/Meshes/SKM_Quinn.SKM_Quinn'"));
-	// ·Îµå ¼º°ø ½Ã ¸Ş½Ã Àû¿ë
+	// ë¡œë“œ ì„±ê³µ ì‹œ ë©”ì‹œ ì ìš©
 	if (TempMesh.Succeeded()) {
 		GetMesh()->SetSkeletalMesh(TempMesh.Object);
 		GetMesh()->SetRelativeLocationAndRotation(FVector(0,0,-90), FRotator(0,-90,0));
 	}
 
-	// Ä³¸¯ÅÍ°¡ µ¹¾Æ°¨ - Z Ãà ±âÁØ
+	// ìºë¦­í„°ê°€ ëŒì•„ê° - Z ì¶• ê¸°ì¤€
 	bUseControllerRotationYaw = true;
-	// Æù Áß½É Ä«¸Ş¶ó ÀÌµ¿ Ã¼Å©¹Ú½º
+	// í° ì¤‘ì‹¬ ì¹´ë©”ë¼ ì´ë™ ì²´í¬ë°•ìŠ¤
 	SpringArmComp->bUsePawnControlRotation = true;
-	// ÀÌµ¿ÇÑ´Â ¹æÇâ ¹Ù¶óº¸´Â Ã¼Å©¹Ú½º
+	// ì´ë™í•˜ëŠ” ë°©í–¥ ë°”ë¼ë³´ëŠ” ì²´í¬ë°•ìŠ¤
 	GetCharacterMovement()->bOrientRotationToMovement = false;
 
-	// Ä³¸¯ÅÍ ÄÄÆ÷³ÍÆ®¿¡ ÀÖ´Â ¼³Á¤ º¯°æ
+	// ìºë¦­í„° ì»´í¬ë„ŒíŠ¸ì— ìˆëŠ” ì„¤ì • ë³€ê²½
 	JumpMaxCount = 2;
-	GetCharacterMovement()->AirControl = 0.7; // °øÁß ¿òÁ÷ÀÓ
+	GetCharacterMovement()->AirControl = 0.7; // ê³µì¤‘ ì›€ì§ì„
 
-	// À¯ÅºÃÑ »ı¼ºÇÏ°í ¿¡¼Â Àû¿ë ÈÄ ¹èÄ¡
-	GrenadeGun = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("GrenadeGun")); // ÄÄÆ÷³ÍÆ® µî·Ï
-	GrenadeGun->SetupAttachment(GetMesh()); // Mesh ¿¡ Attach
-	GrenadeGun->SetCollisionEnabled(ECollisionEnabled::NoCollision); // Ãæµ¹Ã³¸® Á¦¿Ü
-	ConstructorHelpers::FObjectFinder<USkeletalMesh> TempGrenadeGunMesh(TEXT("/Script/Engine.SkeletalMesh'/Game/Models/FPWeapon/Mesh/SK_FPGun.SK_FPGun'")); // µ¥ÀÌÅÍ·Îµå
-	if (TempGrenadeGunMesh.Succeeded()) { // ·Îµå ¼º°ø½Ã
-		GrenadeGun->SetSkeletalMesh(TempGrenadeGunMesh.Object); // skeletal mesh µ¥ÀÌÅÍ ÇÒ´ç
-		GrenadeGun->SetRelativeLocation(FVector(0, 40, 120)); // À§Ä¡ Á¶Á¤
+	// ìœ íƒ„ì´ ìƒì„±í•˜ê³  ì—ì…‹ ì ìš© í›„ ë°°ì¹˜
+	GrenadeGun = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("GrenadeGun")); // ì»´í¬ë„ŒíŠ¸ ë“±ë¡
+	GrenadeGun->SetupAttachment(GetMesh()); // Mesh ì— Attach
+	GrenadeGun->SetCollisionEnabled(ECollisionEnabled::NoCollision); // ì¶©ëŒì²˜ë¦¬ ì œì™¸
+	ConstructorHelpers::FObjectFinder<USkeletalMesh> TempGrenadeGunMesh(TEXT("/Script/Engine.SkeletalMesh'/Game/Models/FPWeapon/Mesh/SK_FPGun.SK_FPGun'")); // ë°ì´í„°ë¡œë“œ
+	if (TempGrenadeGunMesh.Succeeded()) { // ë¡œë“œ ì„±ê³µì‹œ
+		GrenadeGun->SetSkeletalMesh(TempGrenadeGunMesh.Object); // skeletal mesh ë°ì´í„° í• ë‹¹
+		GrenadeGun->SetRelativeLocation(FVector(0, 40, 120)); // ìœ„ì¹˜ ì¡°ì •
 	}
 
-	// ½º³ªÀÌÆÛ »ı¼ºÇÏ°í Mesh ¿¡ ºÙÀÌ±â
+	// ìŠ¤ë‚˜ì´í¼ ìƒì„±í•˜ê³  Mesh ì— ë¶™ì´ê¸°
 	SniperGun = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("SniperGun"));
 	SniperGun->SetupAttachment(GetMesh());
 	SniperGun->SetCollisionEnabled((ECollisionEnabled::NoCollision));
@@ -70,87 +71,89 @@ ATPSPlayer::ATPSPlayer()
 	}
 }
 
-// ºñ±ä ÇÃ·¹ÀÌ
+// ë¹„ê¸´ í”Œë ˆì´
 void ATPSPlayer::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// ÅÂ¾î³¯ ¶§ µÎ °³ÀÇ À§Á¬ »ı¼º
+	// íƒœì–´ë‚  ë•Œ ë‘ ê°œì˜ ìœ„ì ¯ ìƒì„±
 	CrossHairUI = CreateWidget(GetWorld(), CrossHairUIFactory);
 	SniperUI = CreateWidget(GetWorld(), SniperUIFactory);
-	// ´Ù ³Ö¾î³õ°í º¸¿´´Ù ¾Èº¸¿´´Ù ÇÏ´Â ¹æ½ÄÀ¸·Î ±¸Çö
+	// ë‹¤ ë„£ì–´ë†“ê³  ë³´ì˜€ë‹¤ ì•ˆë³´ì˜€ë‹¤ í•˜ëŠ” ë°©ì‹ìœ¼ë¡œ êµ¬í˜„
 	CrossHairUI->AddToViewport(0);
 	SniperUI->AddToViewport(0);
 	
-	// ºÎ¸ğ¿¡¼­ ¶¼¾î³»±â
+	// ë¶€ëª¨ì—ì„œ ë–¼ì–´ë‚´ê¸°
 	// CrossHairUI->RemoveFromParent();
 
-	// Ã³À½ ½ÃÀÛÇÒ ¶§ Grenade ¸¸ º¸ÀÌµµ·Ï Ã³¸®
+	// ì²˜ìŒ ì‹œì‘í•  ë•Œ Grenade ë§Œ ë³´ì´ë„ë¡ ì²˜ë¦¬
 	ATPSPlayer::ActionChooseGrenadeGun();
 }
 
-// Æ½
+// í‹±
 void ATPSPlayer::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
 	// Direction Normalize
 	Direction.Normalize();
-	// Direction À» ÄÁÆ®·Ñ·¯ ±âÁØÀ¸·Î ¹æÇâ ÀçÁ¤·Ä
+	// Direction ì„ ì»¨íŠ¸ë¡¤ëŸ¬ ê¸°ì¤€ìœ¼ë¡œ ë°©í–¥ ì¬ì •ë ¬
 	FVector dir = FTransform(GetControlRotation()).TransformVector(Direction);
-	// Direction ¹æÇâÀ¸·Î ÀÌµ¿
+	// Direction ë°©í–¥ìœ¼ë¡œ ì´ë™
 	AddMovementInput(dir);
+	
+	// cameraComp->FieldOfView = FMath::Lerp(CameraComp->FieldOfView, 45, DeltaTime * 5);
 }
 
-// ÀÔ·Â°ª
+// ì…ë ¥ê°’
 void ATPSPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
-	// ÀÔ·Â ÇÔ¼öµé ¸ğµÎ ¿¬°á (Project Setting ¿¡ ÀÖ´Â ÀÌ¸§°ú ¿¬°á)
-	// Ä³¸¯ÅÍ ÀÌµ¿
+	// ì…ë ¥ í•¨ìˆ˜ë“¤ ëª¨ë‘ ì—°ê²° (Project Setting ì— ìˆëŠ” ì´ë¦„ê³¼ ì—°ê²°)
+	// ìºë¦­í„° ì´ë™
 	PlayerInputComponent->BindAxis(TEXT("Move Forward / Backward"), this, &ATPSPlayer::AxisVertical);
 	PlayerInputComponent->BindAxis(TEXT("Move Right / Left"), this, &ATPSPlayer::AxisHorizontal);
-	// ½Ã¾ß ÀÌµ¿
+	// ì‹œì•¼ ì´ë™
 	PlayerInputComponent->BindAxis(TEXT("Look Up / Down Mouse"), this, &ATPSPlayer::AxisLookUp);
 	PlayerInputComponent->BindAxis(TEXT("Turn Right / Left Mouse"), this, &ATPSPlayer::AxisTurn);
-	// Á¡ÇÁ, ÃÑ½î±â
+	// ì í”„, ì´ì˜ê¸°
 	PlayerInputComponent->BindAction(TEXT("Jump"), IE_Pressed, this, &ATPSPlayer::ActionJump);
 	PlayerInputComponent->BindAction(TEXT("Fire"), IE_Pressed, this, &ATPSPlayer::ActionFire);
-	// À¯Åº, ½º³ªÀÌÆÛ
+	// ìœ íƒ„, ìŠ¤ë‚˜ì´í¼
 	PlayerInputComponent->BindAction(TEXT("ChooseGrenadeGun"), IE_Pressed, this, &ATPSPlayer::ActionChooseGrenadeGun);
 	PlayerInputComponent->BindAction(TEXT("ChooseSniperGun"), IE_Pressed, this, &ATPSPlayer::ActionChooseSniperGun);
-	// ÁÜ ÀÎ¾Æ¿ô
+	// ì¤Œ ì¸ì•„ì›ƒ
 	PlayerInputComponent->BindAction(TEXT("Zoom"), IE_Pressed, this, &ATPSPlayer::ActionZoomIn);
 	PlayerInputComponent->BindAction(TEXT("Zoom"), IE_Released, this, &ATPSPlayer::ActionZoomOut);
 
 }
-// ¼öÁ÷(¾ÕµÚ) ÀÌµ¿
+// ìˆ˜ì§(ì•ë’¤) ì´ë™
 void ATPSPlayer::AxisVertical(float value)
 {
 	Direction.X = value;
 }
-// ¼öÆò(ÁÂ¿ì) ÀÌµ¿
+// ìˆ˜í‰(ì¢Œìš°) ì´ë™
 void ATPSPlayer::AxisHorizontal(float value)
 {
 	Direction.Y = value;
 }
-// »óÇÏ È¸Àü
+// ìƒí•˜ íšŒì „
 void ATPSPlayer::AxisLookUp(float value)
 {
 	AddControllerPitchInput(value);
 }
-// ÁÂ¿ì È¸Àü
+// ì¢Œìš° íšŒì „
 void ATPSPlayer::AxisTurn(float value)
 {
 	AddControllerYawInput(value);
 }
-// Á¡ÇÁ
+// ì í”„
 void ATPSPlayer::ActionJump()
 {
 	Jump();
 }
-// À¯ÅºÀÎÁö Ã¼Å©ÇØ¼­ °¢°¢ »óÈ²¿¡ ¸Â´Â ÃÑ ¹ß»ç ÇÔ¼ö È£Ãâ
+// ìœ íƒ„ì¸ì§€ ì²´í¬í•´ì„œ ê°ê° ìƒí™©ì— ë§ëŠ” ì´ ë°œì‚¬ í•¨ìˆ˜ í˜¸ì¶œ
 void ATPSPlayer::ActionFire()
 {
 	if (bChooseGrenadeGun) {
@@ -161,32 +164,46 @@ void ATPSPlayer::ActionFire()
 	}
 }
 
-// À¯Åº ¹ß»ç
+// ìœ íƒ„ ë°œì‚¬
 void ATPSPlayer::GrenadeFire()
 {
-	// ÃÑ¾ËÀ» »ı¼ºÇØ¼­ À¯ÅºÃÑÀÇ ÃÑ±¸ ¼ÒÄÏ À§Ä¡¿¡ ¹èÄ¡
+	// ì´ì•Œì„ ìƒì„±í•´ì„œ ìœ íƒ„ì´ì˜ ì´êµ¬ ì†Œì¼“ ìœ„ì¹˜ì— ë°°ì¹˜
 	FTransform FirePosition = GrenadeGun->GetSocketTransform(TEXT("FirePosition"));
 	GetWorld()->SpawnActor<ABullet>(BulletFactory, FirePosition);
 }
-// ½º³ªÀÌÆÛ ¹ß»ç
+// ìŠ¤ë‚˜ì´í¼ ë°œì‚¬
 void ATPSPlayer::SniperFire()
 {
-	// ¾Õ¹æÇâ 1Km ¹Ù¶óº¸±â
+	// ì•ë°©í–¥ 1Km ë°”ë¼ë³´ê¸°
 	FHitResult HitResult;
 	FVector Start = CameraComp->GetComponentLocation();
 	FVector End = Start + CameraComp->GetForwardVector() * 100000.f;
 	FCollisionQueryParams Params;
-	// ¶óÀÎÆ®·¹ÀÌ½º : ¹Ù¶óº¸´Â ½Ã¼±
+	// ë¼ì¸íŠ¸ë ˆì´ìŠ¤ : ë°”ë¼ë³´ëŠ” ì‹œì„ 
 	if (GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, ECollisionChannel::ECC_Visibility)) {
-		// ¾îµò°¡¿¡ ºÎµúÈ÷¸é Æø¹ß ÀÌÆåÆ® Ç¥Çö
+		// ì–´ë”˜ê°€ì— ë¶€ë”ªíˆë©´ í­ë°œ ì´í™íŠ¸ í‘œí˜„
 		FTransform position = FTransform(HitResult.ImpactPoint);
 		UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), ExplosionVFXFactory, position);
+		
+		// ë¶€ë”ªíŒ ë¬¼ì²´ê°€ ë¬¼ë¦¬ì‘ìš©ì„ í•  ìˆ˜ ìˆë‹¤ë©´ í˜ì„ ê°€í•¨
+		auto HitComp = HitResult.GetComponent();
+		if ( HitComp && HitComp->IsSimulatingPhysics() ) {
+			HitComp->AddForce(-HitResult.ImpactNormal * HitComp->GetMass() * 50000.f);
+		}
+		// ê·¸ ë¬¼ì²´ê°€ Enemy ë¼ë©´ ì•Œë ¤ì¤Œ (ì•¡í„°ë¥¼ ìºìŠ¤íŠ¸ í•´ì„œ ê°€ì ¸ì˜´)
+		AEnemy* Enemy = Cast<AEnemy>(HitResult.GetActor());
+		if ( Enemy ) {
+			// Enemy->EnemyFSM; // ì•„ë˜ ë°©ë²•ê³¼ ë™ì¼
+			auto FSM = Enemy->GetDefaultSubobjectByName(TEXT("EnemyFSM"));
+			UEnemyFSM* EnemyFSM = Cast<UEnemyFSM>(FSM);
+			EnemyFSM->OnTakeDamage(1);
+		}
 	} else {
-		// ºÎµúÈù °÷ÀÌ ¾ø´Ù(Çã°ø)
+		// ë¶€ë”ªíŒ ê³³ì´ ì—†ë‹¤(í—ˆê³µ)
 	}
 }
 
-// input ¿¡¼­ 1¹ø Å° ¸ÅÇÎ - À¯ÅºÃÑ
+// input ì—ì„œ 1ë²ˆ í‚¤ ë§¤í•‘ - ìœ íƒ„ì´
 void ATPSPlayer::ActionChooseGrenadeGun()
 {
 	bChooseGrenadeGun = true;
@@ -198,7 +215,7 @@ void ATPSPlayer::ActionChooseGrenadeGun()
 
 }
 
-// input ¿¡¼­ 2¹ø Å° ¸ÅÇÎ - ½º³ªÀÌÆÛ ÃÑ
+// input ì—ì„œ 2ë²ˆ í‚¤ ë§¤í•‘ - ìŠ¤ë‚˜ì´í¼ ì´
 void ATPSPlayer::ActionChooseSniperGun()
 {
 	bChooseGrenadeGun = false;
@@ -209,9 +226,9 @@ void ATPSPlayer::ActionChooseSniperGun()
 	SniperUI->SetVisibility(ESlateVisibility::Hidden);
 }
 
-// ÁÜ In & Out (Ä«¸Ş¶ó °Å¸® Á¶Àı)
-// ÁÜ In ÀÏ °æ¿ì Sniper Á¶ÁØ º¸ÀÌ°Ô
-// ÁÜ Out ÀÏ °æ¿ì CrossHair Á¶ÁØ º¸ÀÌ°Ô
+// ì¤Œ In & Out (ì¹´ë©”ë¼ ê±°ë¦¬ ì¡°ì ˆ)
+// ì¤Œ In ì¼ ê²½ìš° Sniper ì¡°ì¤€ ë³´ì´ê²Œ
+// ì¤Œ Out ì¼ ê²½ìš° CrossHair ì¡°ì¤€ ë³´ì´ê²Œ
 void ATPSPlayer::ActionZoomIn()
 {
 	if (bChooseGrenadeGun) {
