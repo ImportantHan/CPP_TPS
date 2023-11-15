@@ -50,6 +50,8 @@ public:
 	void AxisLookUp(float value);
 	void AxisTurn(float value);
 	void ActionJump();
+	void ActionWalk();
+	void ActionRun();
 
 	// 총쏘기 나눠서 
 	void ActionFire();

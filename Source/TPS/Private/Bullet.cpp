@@ -49,8 +49,8 @@ void ABullet::BeginPlay()
 			[this]()->void {
 				// TO DO 내용 작성, 람다를 사용해서 매번 함수를 만들어줘야하는 귀찮음 해결
 				this->Destroy();
-				if (GEngine)
-					GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("총알 사라짐"));
+				/*if (GEngine)
+					GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("총알 사라짐"));*/
 			}),
 		1, false);
 

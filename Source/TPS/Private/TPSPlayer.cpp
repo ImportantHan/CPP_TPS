@@ -76,6 +76,9 @@ void ATPSPlayer::BeginPlay()
 {
 	Super::BeginPlay();
 
+	// 처음 시작할 때 걷는 속도
+	ActionWalk();
+
 	// 태어날 때 두 개의 위젯 생성
 	CrossHairUI = CreateWidget(GetWorld(), CrossHairUIFactory);
 	SniperUI = CreateWidget(GetWorld(), SniperUIFactory);
@@ -88,6 +91,7 @@ void ATPSPlayer::BeginPlay()
 
 	// 처음 시작할 때 Grenade 만 보이도록 처리
 	ATPSPlayer::ActionChooseGrenadeGun();
+
 }
 
 // 틱
@@ -127,7 +131,11 @@ void ATPSPlayer::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent
 	PlayerInputComponent->BindAction(TEXT("Zoom"), IE_Pressed, this, &ATPSPlayer::ActionZoomIn);
 	PlayerInputComponent->BindAction(TEXT("Zoom"), IE_Released, this, &ATPSPlayer::ActionZoomOut);
 
+	// 걷기 뛰기
+	PlayerInputComponent->BindAction(TEXT("Run"), IE_Pressed, this, &ATPSPlayer::ActionRun);
+	PlayerInputComponent->BindAction(TEXT("Run"), IE_Released, this, &ATPSPlayer::ActionWalk);
 }
+
 // 수직(앞뒤) 이동
 void ATPSPlayer::AxisVertical(float value)
 {
@@ -153,9 +161,22 @@ void ATPSPlayer::ActionJump()
 {
 	Jump();
 }
+
+// 걷기 뛰기
+void ATPSPlayer::ActionWalk()
+{
+	GetCharacterMovement()->MaxWalkSpeed = 300;
+}
+void ATPSPlayer::ActionRun()
+{
+	GetCharacterMovement()->MaxWalkSpeed = 600;
+}
+
 // 유탄인지 체크해서 각각 상황에 맞는 총 발사 함수 호출
 void ATPSPlayer::ActionFire()
 {
+	if ( GEngine ) GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("ActionFire"));
+
 	if (bChooseGrenadeGun) {
 		GrenadeFire();
 	}
@@ -170,6 +191,7 @@ void ATPSPlayer::GrenadeFire()
 	// 총알을 생성해서 유탄총의 총구 소켓 위치에 배치
 	FTransform FirePosition = GrenadeGun->GetSocketTransform(TEXT("FirePosition"));
 	GetWorld()->SpawnActor<ABullet>(BulletFactory, FirePosition);
+
 }
 // 스나이퍼 발사
 void ATPSPlayer::SniperFire()

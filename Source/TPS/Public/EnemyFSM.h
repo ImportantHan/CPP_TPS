@@ -58,8 +58,15 @@ public:
 	void OnTakeDamage(int Damage);
 	
 	float CurrentTime;
+
+	UPROPERTY(EditAnywhere)
 	float DamageTime = 2;
+	
+	UPROPERTY(EditAnywhere)
 	float DieTime = 2;
+
+	UPROPERTY(EditAnywhere)
+	float AttackTime = 2;
 
 	void SetState(EEnemyState param1);
 

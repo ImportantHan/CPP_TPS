@@ -9,7 +9,6 @@ UEnemyFSM::UEnemyFSM()
 
 }
 
-
 void UEnemyFSM::BeginPlay()
 {
 	Super::BeginPlay();
@@ -67,7 +66,25 @@ void UEnemyFSM::TickMove()
 
 void UEnemyFSM::TickAttack()
 {
+	// 시간이 흐르다가
+	CurrentTime += GetWorld()->GetDeltaSeconds();
+	
+	// 공격 타격 시간이 되면
+	if ( AttackTime < CurrentTime ) {
+		CurrentTime = 0;
 
+		float Dist = FVector::Dist(Target->GetActorLocation(), Me->GetActorLocation());
+		// 거리가 AttackDistance를 초과한다면
+		if ( AttackDistance < Dist ) {
+			// 이동상태로 전이
+			SetState(EEnemyState::Move);
+		}
+		else {
+			// 공격
+			UE_LOG(LogTemp, Warning, TEXT("빵!빵!"));
+			if ( GEngine ) GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("빵!빵!"));
+		}
+	}
 }
 
 void UEnemyFSM::TickDamage()
@@ -75,7 +92,7 @@ void UEnemyFSM::TickDamage()
 	// 2초동안 대기
 	CurrentTime += GetWorld()->GetDeltaSeconds();
 	// 2초 후 이동상태로 전이
-	if ( CurrentTime > DamageTime ) {
+	if ( DamageTime < CurrentTime ) {
 		SetState(EEnemyState::Move);
 	}
 }
@@ -124,6 +141,7 @@ void UEnemyFSM::OnTakeDamage(int Damage)
 	}
 }
 
+// CurrentTime 초기화
 void UEnemyFSM::SetState(EEnemyState Next)
 {
 	State = Next;
