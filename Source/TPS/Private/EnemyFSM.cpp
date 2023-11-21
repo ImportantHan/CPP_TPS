@@ -2,11 +2,13 @@
 #include "TPSPlayer.h"
 #include "Enemy.h"
 #include "Components/CapsuleComponent.h"
+#include "EnemyAnim.h"
+#include "Animation/AnimMontage.h"
+#include "AIController.h"
 
 UEnemyFSM::UEnemyFSM()
 {
 	PrimaryComponentTick.bCanEverTick = true;
-
 }
 
 void UEnemyFSM::BeginPlay()
@@ -15,6 +17,10 @@ void UEnemyFSM::BeginPlay()
 
 	// 태어날 때 Enemy 기억
 	Me = Cast<AEnemy>(GetOwner());
+
+	EnemyAnim = Cast<UEnemyAnim>(Me->GetMesh()->GetAnimInstance());
+
+	Ai = Cast<AAIController>(Me->GetController());
 }
 
 void UEnemyFSM::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
@@ -48,29 +54,38 @@ void UEnemyFSM::TickIdle()
 	Target = Cast<ATPSPlayer>(GetWorld()->GetFirstPlayerController()->GetPawn());
 	// 찾은 후 이동 상태로 전이
 	if ( Target ) {
-		State = EEnemyState::Move;
+		SetState(EEnemyState::Move);
 	}
 }
 
 void UEnemyFSM::TickMove()
 {
+	FVector Destination = Target->GetActorLocation();
 	// 목적지를 향해 이동
-	FVector Dir = Target->GetActorLocation() - Me->GetActorLocation();
+	FVector Dir = Destination - Me->GetActorLocation();
+
+	Ai->MoveToLocation(Destination);
 	// GetSafeNormal을 쓴 이유는 Normalize 로 인해 본래 길이가 변하지 않도록
 	Me->AddMovementInput(Dir.GetSafeNormal());
 	// 공격 가능 거리라면 공격 상태로 전이
 	if ( Dir.Size() <= AttackDistance ) {
-		State = EEnemyState::Attack;
+		SetState(EEnemyState::Attack);
+		CurrentTime = AttackTime;
 	}
+
+
 }
 
 void UEnemyFSM::TickAttack()
 {
-	// 시간이 흐르다가
+	// 시간이 흐르다가 (AttackWait)
 	CurrentTime += GetWorld()->GetDeltaSeconds();
 	
 	// 공격 타격 시간이 되면
 	if ( AttackTime < CurrentTime ) {
+
+		EnemyAnim->IsAttack = true;
+
 		CurrentTime = 0;
 
 		float Dist = FVector::Dist(Target->GetActorLocation(), Me->GetActorLocation());
@@ -78,27 +93,32 @@ void UEnemyFSM::TickAttack()
 		if ( AttackDistance < Dist ) {
 			// 이동상태로 전이
 			SetState(EEnemyState::Move);
+			EnemyAnim->IsAttack = false;
 		}
 		else {
 			// 공격
-			UE_LOG(LogTemp, Warning, TEXT("빵!빵!"));
-			if ( GEngine ) GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("빵!빵!"));
+			if ( GEngine ) GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("공격"));
 		}
 	}
 }
 
 void UEnemyFSM::TickDamage()
 {
-	// 2초동안 대기
-	CurrentTime += GetWorld()->GetDeltaSeconds();
-	// 2초 후 이동상태로 전이
-	if ( DamageTime < CurrentTime ) {
-		SetState(EEnemyState::Move);
-	}
+	//// 2초동안 대기
+	//CurrentTime += GetWorld()->GetDeltaSeconds();
+	//// 2초 후 이동상태로 전이
+	//if ( DamageTime < CurrentTime ) {
+	//	SetState(EEnemyState::Move);
+	//}
 }
 
 void UEnemyFSM::TickDie()
 {
+	// Enemyanim->IsDieDone 이 false 라면 함수를 종료
+	if ( EnemyAnim->IsDieDone == false ) {
+		return;
+	}
+
 	// 2초 동안 대기
 	CurrentTime += GetWorld()->GetDeltaSeconds();
 	// 파괴
@@ -129,11 +149,13 @@ void UEnemyFSM::OnTakeDamage(int Damage)
 	HP -= Damage;
 	// 체력이 0보다 크면 데미지 상태로 전이
 	if ( HP > 0 ) {
-		State = EEnemyState::Damage;
+		SetState(EEnemyState::Damage);
+		PlayMontageDamage();
 	}
 	// 0 이하라면 죽음 상태로 전이
 	else {
-		State = EEnemyState::Die;
+		SetState(EEnemyState::Die);
+		PlayMontaegDie();
 		// 바닥과 충돌하지 않게 충돌설정 제거
 		Me->GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
@@ -144,7 +166,34 @@ void UEnemyFSM::OnTakeDamage(int Damage)
 // CurrentTime 초기화
 void UEnemyFSM::SetState(EEnemyState Next)
 {
+	check(EnemyAnim);
+
 	State = Next;
+
+	EnemyAnim->State = Next;
+
 	CurrentTime = 0;
 }
 
+// 데미지 몽타주
+void UEnemyFSM::PlayMontageDamage()
+{
+	FName SectionName = TEXT("Damage0");
+	if ( FMath::RandBool() ) {
+		SectionName = TEXT("Damage1");
+	}
+	EnemyAnim->PlayMontageDamage(SectionName);
+}
+
+// 죽음 몽타주
+void UEnemyFSM::PlayMontaegDie()
+{
+	//Me->PlayAnimMontage(EnemyActionMontage, 1, TEXT("Die"));
+	FName SectionName = TEXT("Die");
+	EnemyAnim->PlayMontageDamage(SectionName);
+}
+
+void UEnemyFSM::OnChangeMoveState()
+{
+	SetState(EEnemyState::Move);
+}

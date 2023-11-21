@@ -22,6 +22,9 @@ void UTPSPlayerAnim::NativeUpdateAnimation(float DeltaSeconds)
 	// Direction 변수에 값 대입
 	Speed = FVector::DotProduct(Forward, Velocity);
 	Direction = FVector::DotProduct(Right, Velocity);
+
+	UE_LOG(LogTemp, Warning, TEXT("Speed : %f, Direction : %f"), Speed, Direction);
+
 	// 캐릭터 무브먼트 에서 IsFalling 가져와서 IsFalling 값 변경
 	UCharacterMovementComponent* Movement = Player->GetCharacterMovement();
 	IsFalling = Movement->IsFalling();

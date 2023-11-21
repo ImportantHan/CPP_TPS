@@ -85,4 +85,22 @@ public:
 	// VFXFactory 추가
 	UPROPERTY(EditAnywhere)
 	class UParticleSystem* ExplosionVFXFactory;
+
+	// 총쏘기 동작을 위한 몽타주를 담을 그릇
+	UPROPERTY(EditAnywhere)
+	class UAnimMontage* FireAnimMontage;
+	
+	// 총쏘는 동작 호출 기능
+	void PlayFireAnim();
+
+	// 총 소리
+	UPROPERTY(EditAnywhere)
+	class USoundBase* FireSound;
+
+	// 총 진동
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<class UCameraShakeBase> CameraShakeFactory;
+
+	UPROPERTY(EditAnywhere)
+	UCameraShakeBase* CameraShake;
 };

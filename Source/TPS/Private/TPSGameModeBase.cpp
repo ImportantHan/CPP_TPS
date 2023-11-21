@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+ï»¿// Fill out your copyright notice in the Description page of Project Settings.
 
 
 #include "TPSGameModeBase.h"
@@ -6,11 +6,11 @@
 
 void ATPSGameModeBase::BeginPlay()
 {
-	// ±âº»Çü
-	UE_LOG(LogTemp, Warning, TEXT("Hello, %s"), *FString("mmm"));
+	// ê¸°ë³¸í˜•
+	// UE_LOG(LogTemp, Warning, TEXT("Hello, %s"), *FString("mmm"));
 
-	// shift + alt + s (assist »ç¿ë½Ã) // Shift + ctrl + f (assist ¾øÀ» ¶§) - ¿øÇÏ´Â ÇÔ¼ö·Î ¹Ù·Î ÀÌµ¿
-	UE_LOG(LogTemp, Warning, TEXT("%s %s"), *CLASS_INFO, TEXT("AHSHDA"));
+	// shift + alt + s (assist ì‚¬ìš©ì‹œ) // Shift + ctrl + f (assist ì—†ì„ ë•Œ) - ì›í•˜ëŠ” í•¨ìˆ˜ë¡œ ë°”ë¡œ ì´ë™
+	// UE_LOG(LogTemp, Warning, TEXT("%s %s"), *CLASS_INFO, TEXT("AHSHDA"));
 
-	MY_LOG(TEXT("%s %s"), TEXT("11"), TEXT("33"));
+	// MY_LOG(TEXT("%s %s"), TEXT("11"), TEXT("33"));
 }

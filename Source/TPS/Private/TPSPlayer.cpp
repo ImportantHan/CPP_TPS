@@ -46,27 +46,28 @@ ATPSPlayer::ATPSPlayer()
 	GetCharacterMovement()->bOrientRotationToMovement = false;
 
 	// 캐릭터 컴포넌트에 있는 설정 변경
-	JumpMaxCount = 2;
+	JumpMaxCount = 7;
 	GetCharacterMovement()->AirControl = 0.7; // 공중 움직임
 
 	// 유탄총 생성하고 에셋 적용 후 배치
 	GrenadeGun = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("GrenadeGun")); // 컴포넌트 등록
-	GrenadeGun->SetupAttachment(GetMesh()); // Mesh 에 Attach
+	GrenadeGun->SetupAttachment(GetMesh(), TEXT("hand_rShocket")); // Mesh 에 Attach
 	GrenadeGun->SetCollisionEnabled(ECollisionEnabled::NoCollision); // 충돌처리 제외
 	ConstructorHelpers::FObjectFinder<USkeletalMesh> TempGrenadeGunMesh(TEXT("/Script/Engine.SkeletalMesh'/Game/Models/FPWeapon/Mesh/SK_FPGun.SK_FPGun'")); // 데이터로드
 	if (TempGrenadeGunMesh.Succeeded()) { // 로드 성공시
 		GrenadeGun->SetSkeletalMesh(TempGrenadeGunMesh.Object); // skeletal mesh 데이터 할당
-		GrenadeGun->SetRelativeLocation(FVector(0, 40, 120)); // 위치 조정
+		GrenadeGun->SetRelativeLocationAndRotation(FVector(-20.000000, 2.000000, 1.823070 ), FRotator( 11.578227, 104.513344, -10.053178 )); // 위치 조정
 	}
 
 	// 스나이퍼 생성하고 Mesh 에 붙이기
 	SniperGun = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("SniperGun"));
-	SniperGun->SetupAttachment(GetMesh());
+	// 스켈레톤에 소켓 추가함
+	SniperGun->SetupAttachment(GetMesh(), TEXT("hand_rShocket"));
 	SniperGun->SetCollisionEnabled((ECollisionEnabled::NoCollision));
 	ConstructorHelpers::FObjectFinder<UStaticMesh> TempSniperGunMesh(TEXT("/Script/Engine.StaticMesh'/Game/Models/SniperGun/sniper1.sniper1'"));
 	if (TempSniperGunMesh.Succeeded()) {
 		SniperGun->SetStaticMesh(TempSniperGunMesh.Object);
-		SniperGun->SetRelativeLocation(FVector(0, 80, 130));
+		SniperGun->SetRelativeLocationAndRotation(FVector( -39.000000, -3.000000, 13.000000 ), FRotator( 9.846552, 106.245941, -10.151082 ));
 		SniperGun->SetRelativeScale3D(FVector(0.15f));
 	}
 }
@@ -107,6 +108,11 @@ void ATPSPlayer::Tick(float DeltaTime)
 	AddMovementInput(dir);
 	
 	// cameraComp->FieldOfView = FMath::Lerp(CameraComp->FieldOfView, 45, DeltaTime * 5);
+
+	// 카메라 흔들리는 중에 처리할 행동 정의 가능
+	//if ( CameraShake && CameraShake->IsFinished() == false ) {
+	//	//...
+	//}
 }
 
 // 입력값
@@ -175,7 +181,7 @@ void ATPSPlayer::ActionRun()
 // 유탄인지 체크해서 각각 상황에 맞는 총 발사 함수 호출
 void ATPSPlayer::ActionFire()
 {
-	if ( GEngine ) GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Yellow, TEXT("ActionFire"));
+	PlayFireAnim();
 
 	if (bChooseGrenadeGun) {
 		GrenadeFire();
@@ -270,3 +276,18 @@ void ATPSPlayer::ActionZoomOut()
 	SniperUI->SetVisibility(ESlateVisibility::Hidden);
 }
 
+// 총쏘는 모션에 카메라 흔들림, 모션 몽타주, 소리 추가
+void ATPSPlayer::PlayFireAnim()
+{
+	// 플레이어 카메라 가져오기
+	// UGameplayStatics::GetPlayerCameraManager(GetWorld(), 0);
+	auto CameraManager = GetWorld()->GetFirstPlayerController()->PlayerCameraManager;
+	// 카메라 흔들기
+	CameraShake = CameraManager->StartCameraShake(CameraShakeFactory);
+
+	// 몽타주 적용
+	PlayAnimMontage(FireAnimMontage);
+
+	// 소리
+	UGameplayStatics::PlaySound2D(GetWorld(), FireSound);
+}
