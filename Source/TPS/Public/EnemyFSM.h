@@ -55,8 +55,9 @@ public:
 	// 데미지 입었으면 체력 1감소
 	// 체력이 0보다 크면 데미지 상태로 전이
 	// 0 이하라면 죽음 상태로 전이
-	int HP = 2;
-	void OnTakeDamage(int Damage);
+	int32 HP = 2;
+	int32 MaxHP = 3;
+	void OnTakeDamage(int32 Damage);
 	
 	float CurrentTime;
 
@@ -91,4 +92,11 @@ public:
 	// AIController를 이용해서 길찾기
 	UPROPERTY()
 	class AAIController* Ai;
+
+	FVector RandomLocation;
+
+	bool UpdateRandomLocation(FVector Origin, float Radious, FVector& OutLocation);
+
+private:
+	void UpdateHP(int32 NewHP);
 };

@@ -30,4 +30,7 @@ public:
 	// FSM 선언 및 블루프린트에서 사용 가능하도록
 	UPROPERTY(EditAnywhere, BlueprintReadWrite);
 	class UEnemyFSM* EnemyFSM;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite);
+	class UWidgetComponent* HPComp;
 };
